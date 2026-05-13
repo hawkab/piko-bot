@@ -1,0 +1,34 @@
+{
+  "providers": {
+    "ollama": {
+      "apiBase": "http://ollama:11434"
+    }
+  },
+  "agents": {
+    "defaults": {
+      "provider": "ollama",
+      "model": "llama3.2",
+      "workspace": "/root/.pikobot/workspace"
+    }
+  },
+  "gateway": {
+    "port": 18790
+  },
+  "channels": {
+    "rabbitmq": {
+      "enabled": true,
+      "url": "amqp://aiops:aiops_secret@rabbitmq:5672/",
+      "exchange": "pikobot",
+      "exchangeType": "direct",
+      "durable": true,
+      "prefetchCount": 10,
+      "inboundQueue": "pikobot.inbound",
+      "inboundRoutingKey": "pikobot.inbound",
+      "outboundRoutingKey": "pikobot.outbound",
+      "allowFrom": [
+        "*"
+      ],
+      "streaming": false
+    }
+  }
+}

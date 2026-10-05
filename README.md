@@ -4,6 +4,10 @@ RabbitMQ-driven AI agent worker for `multi-agent-executor`.
 
 Pikobot consumes tasks from RabbitMQ, executes them with an LLM-backed agent, and publishes the result back to RabbitMQ. This fork keeps only the channel required for the Jira → RabbitMQ → Guardian → Pikobot → Jira flow.
 
+[![Support this project · TON network](https://hawkab.github.io/support/support-button.svg)](https://hawkab.github.io/support/)
+
+This fork contains substantial changes compared with upstream nanobot: most channels and features were removed and the RabbitMQ Jira flow was reworked. Optional contributions support development, maintenance and testing of this fork. The [support page](https://hawkab.github.io/support/) has a QR code, wallet link and copy buttons. You choose the amount in your wallet.
+
 ## What was kept
 
 - RabbitMQ channel.

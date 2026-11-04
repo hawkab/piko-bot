@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import itertools
 from dataclasses import dataclass, field
 from typing import Any
 
 from pikobot.agent.hook import AgentHook, AgentHookContext
 from pikobot.agent.tools.registry import ToolRegistry
-from pikobot.providers.base import LLMProvider, ToolCallRequest
+from pikobot.providers.base import LLMProvider, ToolCallRequest, ContextWindowExceeded
 from pikobot.utils.helpers import build_assistant_message
 
 _DEFAULT_MAX_ITERATIONS_MESSAGE = (
@@ -25,7 +26,7 @@ class AgentRunSpec:
     initial_messages: list[dict[str, Any]]
     tools: ToolRegistry
     model: str
-    max_iterations: int
+    max_iterations: int | None
     temperature: float | None = None
     max_tokens: int | None = None
     reasoning_effort: str | None = None
@@ -65,7 +66,10 @@ class AgentRunner:
         stop_reason = "completed"
         tool_events: list[dict[str, str]] = []
 
-        for iteration in range(spec.max_iterations):
+        if spec.max_iterations is not None and (type(spec.max_iterations) is not int or spec.max_iterations<1):
+            raise ValueError('max_iterations must be a positive integer or null')
+        iterations = itertools.count() if spec.max_iterations is None else range(spec.max_iterations)
+        for iteration in iterations:
             context = AgentHookContext(iteration=iteration, messages=messages)
             await hook.before_iteration(context)
             kwargs: dict[str, Any] = {
@@ -80,24 +84,32 @@ class AgentRunner:
             if spec.reasoning_effort is not None:
                 kwargs["reasoning_effort"] = spec.reasoning_effort
 
-            if hook.wants_streaming():
-                async def _stream(delta: str) -> None:
-                    await hook.on_stream(context, delta)
+            try:
+                if hook.wants_streaming():
+                    async def _stream(delta: str) -> None:
+                        await hook.on_stream(context, delta)
 
-                response = await self.provider.chat_stream_with_retry(
-                    **kwargs,
-                    on_content_delta=_stream,
-                )
-            else:
-                response = await self.provider.chat_with_retry(**kwargs)
+                    response = await self.provider.chat_stream_with_retry(
+                        **kwargs,
+                        on_content_delta=_stream,
+                    )
+                else:
+                    response = await self.provider.chat_with_retry(**kwargs)
+
+            except ContextWindowExceeded as exc:
+                if await hook.on_context_rejected(context, exc):
+                    continue
+                raise
 
             raw_usage = response.usage or {}
-            usage = {
+            round_usage = {
                 "prompt_tokens": int(raw_usage.get("prompt_tokens", 0) or 0),
                 "completion_tokens": int(raw_usage.get("completion_tokens", 0) or 0),
             }
+            for key, value in round_usage.items():
+                usage[key] += value
             context.response = response
-            context.usage = usage
+            context.usage = round_usage
             context.tool_calls = list(response.tool_calls)
 
             if response.has_tool_calls:
@@ -133,6 +145,9 @@ class AgentRunner:
                         "content": result,
                     })
                 await hook.after_iteration(context)
+                if hook.should_stop(context):
+                    final_content = context.final_content
+                    break
                 continue
 
             if hook.wants_streaming():

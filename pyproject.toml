@@ -77,6 +77,8 @@ packages = ["pikobot"]
 [tool.hatch.build.targets.sdist]
 include = [
     "pikobot/",
+    "tests/",
+    "docs/",
     "README.md",
     "LICENSE",
 ]

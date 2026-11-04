@@ -39,11 +39,19 @@ class AgentHook:
     async def on_stream_end(self, context: AgentHookContext, *, resuming: bool) -> None:
         pass
 
+    async def on_context_rejected(self, context: AgentHookContext, error: Exception) -> bool:
+        """Return true only after a durable, safe context checkpoint was made."""
+        return False
+
     async def before_execute_tools(self, context: AgentHookContext) -> None:
         pass
 
     async def after_iteration(self, context: AgentHookContext) -> None:
         pass
+
+    def should_stop(self, context: AgentHookContext) -> bool:
+        """Stop after a service-confirmed terminal tool without another model turn."""
+        return False
 
     def finalize_content(self, context: AgentHookContext, content: str | None) -> str | None:
         return content

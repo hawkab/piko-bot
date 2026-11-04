@@ -1,8 +1,9 @@
-"""Agent core module."""
+"""Lazy public exports: embedding AgentRunner needs no personal tools or channels."""
+from importlib import import_module
 
-from pikobot.agent.context import ContextBuilder
-from pikobot.agent.loop import AgentLoop
-from pikobot.agent.memory import MemoryStore
-from pikobot.agent.skills import SkillsLoader
+_EXPORTS = {'AgentLoop': '.loop', 'ContextBuilder': '.context', 'MemoryStore': '.memory', 'SkillsLoader': '.skills'}
+__all__ = list(_EXPORTS)
 
-__all__ = ["AgentLoop", "ContextBuilder", "MemoryStore", "SkillsLoader"]
+def __getattr__(name):
+    if name not in _EXPORTS: raise AttributeError(name)
+    return getattr(import_module(_EXPORTS[name], __name__), name)

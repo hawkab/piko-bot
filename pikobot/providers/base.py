@@ -10,6 +10,10 @@ from typing import Any
 from loguru import logger
 
 
+class ContextWindowExceeded(ValueError):
+    """A final provider length outcome permits a shrinking scoped checkpoint."""
+
+
 @dataclass
 class ToolCallRequest:
     """A tool call request from the LLM."""

@@ -8,7 +8,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import tiktoken
 
 
 def strip_think(text: str) -> str:
@@ -141,6 +140,7 @@ def estimate_prompt_tokens(
     reasoning_content, tool_call_id, name, plus per-message framing overhead.
     """
     try:
+        import tiktoken
         enc = tiktoken.get_encoding("cl100k_base")
         parts: list[str] = []
         for msg in messages:
@@ -208,6 +208,7 @@ def estimate_message_tokens(message: dict[str, Any]) -> int:
     if not payload:
         return 4
     try:
+        import tiktoken
         enc = tiktoken.get_encoding("cl100k_base")
         return max(4, len(enc.encode(payload)) + 4)
     except Exception:

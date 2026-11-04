@@ -78,3 +78,19 @@ docker compose logs -f pikobot-gateway
 ```bash
 docker compose run --rm pikobot-cli status
 ```
+
+## Agent Factory embedding
+
+The optional [`pikobot.factory`](docs/agent-factory.md) profile embeds the same
+`AgentRunner` behind a scoped MCP broker. It adds durable checkpoints, recovery
+without replaying completed effects, scoped tool catalogs and task-bound user
+questions. The existing RabbitMQ gateway remains available.
+
+### Run the portable regression tests
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install loguru
+python -m unittest discover -s tests -v
+```
